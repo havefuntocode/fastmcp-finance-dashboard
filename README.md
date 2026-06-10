@@ -4,7 +4,7 @@ Create a little bar-chart dashboard with PostgreSQL and Claude.
 
 Ein MCP-Server (Model Context Protocol), der Claude Desktop ermöglicht, monatliche Umsatzdaten
 aus einer PostgreSQL-Datenbank abzufragen, als Quartalssummen zu aggregieren und als interaktives
-Chart.js-Balkendiagramm im Browser darzustellen.
+Balkendiagramm direkt im Claude Client darzustellen.
 
 ---
 
@@ -13,10 +13,8 @@ Chart.js-Balkendiagramm im Browser darzustellen.
 | Layer | Technologie |
 |---|---|
 | KI-Integration | [FastMCP](https://github.com/jlowin/fastmcp) |
-| REST-Endpunkt | [FastAPI](https://fastapi.tiangolo.com/) |
 | Datenbank | PostgreSQL |
-| Visualisierung | [Chart.js](https://www.chartjs.org/) |
-| Frontend | HTML + Vanilla JS |
+| Visualisierung | Claude Client (Chart.js) |
 
 ---
 
@@ -28,7 +26,7 @@ Chart.js-Balkendiagramm im Browser darzustellen.
 - Folgende Python-Pakete:
 
 ```bash
-pip install fastapi uvicorn fastmcp psycopg2-binary python-dotenv
+pip install fastmcp psycopg2-binary
 ```
 
 ---
@@ -88,7 +86,7 @@ git clone https://github.com/havefuntocode/fastmcp-finance-dashboard.git
 cd fastmcp-finance-dashboard
 
 # Abhängigkeiten installieren
-pip install fastapi uvicorn fastmcp psycopg2-binary python-dotenv
+pip install mcp fastmcp psycopg2-binary
 ```
 
 ---
@@ -97,10 +95,8 @@ pip install fastapi uvicorn fastmcp psycopg2-binary python-dotenv
 
 ```
 fastmcp-finance-dashboard/
-├── umsatz_server_pg.py       # FastMCP + FastAPI Server
+├── umsatz_server_pg.py       # FastMCP Server (stdio)
 ├── finance_db_postgresql.sql # CREATE TABLE + INSERT Beispieldaten
-├── finance_dashboard.html    # Chart.js Dashboard (Frontend)
-├── .env.example              # Umgebungsvariablen (Vorlage)
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -108,26 +104,10 @@ fastmcp-finance-dashboard/
 
 ---
 
-## 6. .env Datei einrichten
+## 6. Claude Desktop Konfiguration
 
-```
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=finance_db
-DB_USER=postgres
-DB_PASSWORD=dein_passwort
-```
-
-> **Hinweis:** Die `.env` Datei wird **nicht** in das Repository eingecheckt.
-> `.env.example` als Vorlage verwenden und in `.env` umbenennen.
-
-```bash
-cp .env.example .env
-```
-
----
-
-## 7. Claude Desktop Konfiguration
+Da der Server über **stdio** läuft, startet Claude Desktop den Server automatisch.
+Es wird keine URL benötigt – nur der Pfad zum Python-Skript.
 
 Pfad der Konfigurationsdatei:
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
@@ -151,11 +131,12 @@ Pfad der Konfigurationsdatei:
 }
 ```
 
-Nach dem Speichern Claude Desktop neu starten.
+> **Hinweis:** Den Pfad in `args` an deinen tatsächlichen Speicherort anpassen.
+> Nach dem Speichern Claude Desktop neu starten – der Server wird automatisch gestartet.
 
 ---
 
-## 8. Das MCP-Tool im Überblick
+## 7. Das MCP-Tool im Überblick
 
 | Tool | Beschreibung | Parameter |
 |---|---|---|
@@ -163,17 +144,14 @@ Nach dem Speichern Claude Desktop neu starten.
 
 ---
 
-## 9. Datenfluss
+## 8. Datenfluss
 
 ```
-Claude Desktop / Browser
+Claude Desktop
         │
-        │  POST /query { tool: "get_chart_data", jahr: 2024 }
+        │  get_chart_data(jahr)  ← MCP Tool Aufruf
         ▼
-   FastAPI /query
-        │
-        ▼
-   get_chart_data()         ← MCP Tool
+   get_chart_data()
         │
         ▼
    _query_quartalsumsatz()
@@ -190,7 +168,7 @@ Claude Desktop / Browser
 
 ---
 
-## 10. Aggregationsabfrage
+## 9. Aggregationsabfrage
 
 ```sql
 SELECT
@@ -204,31 +182,14 @@ ORDER BY jahr, quartal;
 
 ---
 
-## 11. Startvorgang
+## 10. Startvorgang
 
-**Schritt 1 — Server starten:**
-```bash
-python umsatz_server_pg.py
-# → läuft auf http://localhost:8000
-```
-
-**Schritt 2 — Dashboard im Browser öffnen:**
-```bash
-# Direkt per Doppelklick auf finance_dashboard.html
-# oder über einen kleinen HTTP-Server:
-python -m http.server 3000
-# → http://localhost:3000/finance_dashboard.html
-```
-
-| Endpunkt | Beschreibung |
-|---|---|
-| `POST /query` | Liefert Chart.js-Datenobjekt (Brücke zum Browser) |
-| `GET /health` | Health-Check |
-| `/mcp` | MCP SSE Endpunkt für Claude Desktop |
+Claude Desktop startet den Server automatisch beim Start – kein manueller Start erforderlich.
+Das Balkendiagramm wird direkt im Claude Client angezeigt, sobald das MCP-Tool aufgerufen wird.
 
 ---
 
-## 12. .gitignore
+## 11. .gitignore
 
 ```
 # Sensible Dateien
@@ -250,17 +211,17 @@ venv/
 
 ---
 
-## 13. Lizenz
+## 12. Lizenz
 
 Dieses Projekt steht unter der [MIT License](https://opensource.org/licenses/MIT).
 Du darfst es frei verwenden, anpassen und weitergeben.
 
 ---
 
-## 14. Hinweis zur Erstellung
+## 13. Hinweis zur Erstellung
 
 Diese README wurde in Zusammenarbeit mit **Claude (Anthropic)** erstellt. Claude hat mich
 bei der Entwicklung dieses Projekts unterstützt — von der Datenbankmodellierung über die
-Implementierung des FastMCP-Servers und des FastAPI-Endpunkts bis hin zur Chart.js-Visualisierung
-und Dokumentation. Die Zusammenarbeit mit Claude ist auch Thema meiner
+Implementierung des FastMCP-Servers bis hin zur Chart.js-Visualisierung und Dokumentation.
+Die Zusammenarbeit mit Claude ist auch Thema meiner
 [LinkedIn-Erfahrungsberichte](https://www.linkedin.com/in/michael-laube-602562127/).
